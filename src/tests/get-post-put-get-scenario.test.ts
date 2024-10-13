@@ -1,9 +1,9 @@
-import {describe, it, before, after} from 'node:test';
-import {deepStrictEqual} from 'node:assert';
+import {describe, it, after} from 'node:test';
+import {deepStrictEqual, strictEqual} from 'node:assert';
 
 const url = 'http://localhost:3000/api/users';
 
-describe('Should get empty initial users list, add some user, update this user and get users list again with updated user', () => {
+describe('Should get empty initial users list, add some user, update this user and get user again with updated data', () => {
     const updatedUser = {username: 'test', age: 31, hobbies: ['birdwatching', 'hiking']};
     let userId: string;
 
@@ -39,9 +39,16 @@ describe('Should get empty initial users list, add some user, update this user a
         deepStrictEqual(data, {data: {id: userId, ...updatedUser}, error: null});
     })
 
-    it('Should get users list with updated user', async () => {
-        const response = await fetch(url);
+    it('Should get updated user', async () => {
+        const response = await fetch(`${url}/${userId}`);
         const data = await response.json();
-        deepStrictEqual(data, {data: [{id: userId, ...updatedUser}], error: null});
+        deepStrictEqual(data, {data: {id: userId, ...updatedUser}, error: null});
+    })
+
+    after(async () => {
+        const response = await fetch(`${url}/${userId}`, {
+            method: 'DELETE',
+        });
+        strictEqual(response.status, 204);
     })
 })
