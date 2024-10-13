@@ -1,7 +1,9 @@
 import http from 'http';
 import {handleErrorResponse} from "./helpers/handle-error-response.js";
 import {handleUsersRequest} from "./routing/users/index.js";
+import dotenv from 'dotenv';
 
+dotenv.config();
 const PORT = process.env.PORT || 8000;
 
 const server = http.createServer(async (req, res) => {
