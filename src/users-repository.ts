@@ -1,5 +1,5 @@
 import * as uuid from 'uuid';
-import {User} from "./models/user";
+import {User} from "./models/user.js";
 
 const users: Record<string, User> = {};
 
