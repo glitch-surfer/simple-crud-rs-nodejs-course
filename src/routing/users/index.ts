@@ -8,7 +8,7 @@ import {User} from "../../models/user.js";
 const getUserId = (req: http.IncomingMessage) => req.url?.split('/').pop();
 
 export const handleUsersRequest = async (req: http.IncomingMessage, res: http.ServerResponse) => {
-    if (req.url?.split('/')?.length! > 3) return handleErrorResponse(res, 404, 'Not found');
+    if (req.url?.split('/')?.length! > 4) return handleErrorResponse(res, 404, 'Not found');
 
     switch (req.method) {
         case 'GET': {
@@ -61,9 +61,9 @@ export const handleUsersRequest = async (req: http.IncomingMessage, res: http.Se
                 return;
             }
 
-            userRepository.update(id, user);
+            const updatedUser = userRepository.update(id, user);
 
-            handleResponse(res, user);
+            handleResponse(res, updatedUser);
             return;
         }
 
