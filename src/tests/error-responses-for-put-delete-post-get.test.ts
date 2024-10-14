@@ -1,4 +1,4 @@
-import {describe, it, after} from 'node:test';
+import {describe, it} from 'node:test';
 import {deepStrictEqual, strictEqual} from 'node:assert';
 
 const url = 'http://localhost:3000/api/users';

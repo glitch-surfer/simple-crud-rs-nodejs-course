@@ -2,9 +2,10 @@ import {spawn} from 'child_process';
 import http from 'http';
 import path from "node:path";
 import fs from "node:fs";
+import process from "node:process";
 
 // Start the server
-const server = spawn('node', ['dist/index.js']);
+const server = spawn('node', [process.argv[2]]);
 
 server.stdout.on('data', (data) => {
     console.log(`Server: ${data}`);

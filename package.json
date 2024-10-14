@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "start:dev": "nodemon src/index.ts",
+    "start:multi": "tsc && node dist/index-cluster.js",
     "start:prod": "tsc && node dist/index.js",
     "lint": "eslint . --ext .ts",
-    "test": "tsc && node dist/run-server-and-test.js"
+    "test": "tsc && node dist/run-server-and-test.js dist/index.js",
+    "test:multi": "tsc && node dist/run-server-and-test.js dist/index-cluster.js"
   },
   "keywords": [],
   "author": "",
