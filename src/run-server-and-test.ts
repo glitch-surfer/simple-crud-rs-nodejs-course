@@ -1,5 +1,7 @@
 import {spawn} from 'child_process';
 import http from 'http';
+import path from "node:path";
+import fs from "node:fs";
 
 // Start the server
 const server = spawn('node', ['dist/index.js']);
@@ -35,22 +37,33 @@ function retryServerCheck(retries: number) {
     }
 }
 
-function runTests() {
-    const tests = spawn('node', ['--test', 'dist/**/*.test.js']);
+async function runTests() {
+    const testDir = path.join(process.cwd(), 'dist', 'tests');
+    const testFiles = await fs.promises.readdir(testDir);
+    const testJsFiles = testFiles.filter(file => file.endsWith('.test.js'));
 
-    tests.stdout.on('data', (data) => {
-        console.log(`Tests: ${data}`);
-    });
+    for (const testFile of testJsFiles) {
+        console.log(`Running test file: ${testFile}`);
+        const testProcess = spawn('node', ['--test', path.join(testDir, testFile)]);
 
-    tests.stderr.on('data', (data) => {
-        console.error(`Tests Error: ${data}`);
-    });
+        await new Promise<void>((resolve) => {
+            testProcess.stdout.on('data', (data) => {
+                console.log(`Test ${testFile}: ${data}`);
+            });
 
-    tests.on('close', (code) => {
-        console.log(`Tests finished with code ${code}`);
-        server.kill();
-        process.exit(code);
-    });
+            testProcess.stderr.on('data', (data) => {
+                console.error(`Test ${testFile} Error: ${data}`);
+            });
+
+            testProcess.on('close', (code) => {
+                console.log(`Test ${testFile} finished with code ${code}`);
+                resolve();
+            });
+        });
+    }
+
+    server.kill();
+    process.exit();
 }
 
 // Start checking if server is up

@@ -34,7 +34,7 @@ describe('Should get empty initial users list, add some user, delete this user a
         strictEqual(response.status, 204);
     })
 
-    it('Should return error that user not found', async () => {
+    it('Should return error if that user not found', async () => {
         const response = await fetch(`${url}/${userId}`);
 
         strictEqual(response.status, 404);
