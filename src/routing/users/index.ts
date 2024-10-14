@@ -1,29 +1,29 @@
 import http from "http";
 import {handleResponse} from "../../helpers/handle-response.js";
-import {userRepository} from "../../users-repository.js";
 import {handleErrorResponse} from "../../helpers/handle-error-response.js";
 import {parseRequestBody} from "../../helpers/parse-request-body.js";
 import {User} from "../../models/user.js";
+import {UsersRepository} from "../../users-repository.js";
 
 const getUserId = (req: http.IncomingMessage) => req.url?.split('/').pop();
 
-export const handleUsersRequest = async (req: http.IncomingMessage, res: http.ServerResponse) => {
+export const handleUsersRequest = async (req: http.IncomingMessage, res: http.ServerResponse, usersRepository: UsersRepository): Promise<Record<string, User> | void> => {
     if (req.url?.split('/')?.length! > 4) return handleErrorResponse(res, 404, 'Not found');
 
     switch (req.method) {
         case 'GET': {
             if (req.url === '/api/users') {
-                handleResponse(res, userRepository.getAll());
-                return;
+                handleResponse(res, usersRepository.getAll());
+                return usersRepository.getData();
             }
 
             const id = getUserId(req);
 
             if (!id) return handleErrorResponse(res, 400, 'User id is required');
-            if (!userRepository.hasUser(id)) return handleErrorResponse(res, 404, 'User not found');
+            if (!usersRepository.hasUser(id)) return handleErrorResponse(res, 404, 'User not found');
 
-            handleResponse(res, userRepository.getOneById(id));
-            return;
+            handleResponse(res, usersRepository.getOneById(id));
+            return usersRepository.getData();
         }
 
         case 'POST': {
@@ -34,25 +34,25 @@ export const handleUsersRequest = async (req: http.IncomingMessage, res: http.Se
                 return;
             }
 
-            const user = userRepository.create(body);
+            const user = usersRepository.create(body);
             handleResponse(res, user, 201);
-            return;
+            return usersRepository.getData();
         }
 
         case 'DELETE': {
             const id = getUserId(req);
             if (!id) return handleErrorResponse(res, 400, 'User id is required');
-            if (!userRepository.hasUser(id)) return handleErrorResponse(res, 404, 'User not found');
+            if (!usersRepository.hasUser(id)) return handleErrorResponse(res, 404, 'User not found');
 
-            userRepository.delete(id);
+            usersRepository.delete(id);
             handleResponse(res, {success: true}, 204);
-            return;
+            return usersRepository.getData();
         }
 
         case 'PUT': {
             const id = getUserId(req);
             if (!id) return handleErrorResponse(res, 400, 'User id is required');
-            if (!userRepository.hasUser(id)) return handleErrorResponse(res, 404, 'User not found');
+            if (!usersRepository.hasUser(id)) return handleErrorResponse(res, 404, 'User not found');
 
             const user = await parseRequestBody<User>(req);
 
@@ -61,10 +61,10 @@ export const handleUsersRequest = async (req: http.IncomingMessage, res: http.Se
                 return;
             }
 
-            const updatedUser = userRepository.update(id, user);
+            const updatedUser = usersRepository.update(id, user);
 
             handleResponse(res, updatedUser);
-            return;
+            return usersRepository.getData();
         }
 
         default: {
