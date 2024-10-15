@@ -1,25 +1,34 @@
-import {handleErrorResponse} from "../../../helpers/handle-error-response.js";
-import {parseRequestBody} from "../../../helpers/parse-request-body.js";
-import {User} from "../../../models/user.js";
-import {handleResponse} from "../../../helpers/handle-response.js";
-import {IncomingMessage, ServerResponse} from "http";
-import {UsersRepository} from "../../../users-repository.js";
-import {getUserId} from "../../../helpers/get-user-id.js";
+import { handleErrorResponse } from "../../../helpers/handle-error-response.js";
+import { parseRequestBody } from "../../../helpers/parse-request-body.js";
+import { User } from "../../../models/user.js";
+import { handleResponse } from "../../../helpers/handle-response.js";
+import { IncomingMessage, ServerResponse } from "http";
+import process from "node:process";
+import { WorkerActionTypes } from "../../../models/worker-action-types.js";
+import { getUserId } from "../../../helpers/get-user-id.js";
 
-export const updateUserHandler = async (req: IncomingMessage, res: ServerResponse, usersRepository: UsersRepository) => {
-    const id = getUserId(req);
-    if (!id) return handleErrorResponse(res, 400, 'User id is required');
-    if (!usersRepository.hasUser(id)) return handleErrorResponse(res, 404, 'User not found');
+export const updateUserHandler = async (
+  req: IncomingMessage,
+  res: ServerResponse,
+) => {
+  return new Promise(async (resolve) => {
+    const data = await parseRequestBody<User>(req);
 
-    const user = await parseRequestBody<User>(req);
-
-    if (!user?.username || !user.age) {
-        handleErrorResponse(res, 400, 'Username and age are required');
-        return;
+    if (!data?.username || !data.age) {
+      handleErrorResponse(res, 400, "Username and age are required");
+      return;
     }
 
-    const updatedUser = usersRepository.update(id, user);
+    process.once("message", ({ data, error }) => {
+      if (error) return handleErrorResponse(res, 404, "User not found");
+      handleResponse(res, data);
+      resolve(data);
+    });
 
-    handleResponse(res, updatedUser);
-    return usersRepository.getData();
-}
+    const id = getUserId(req);
+    process.send?.({
+      type: WorkerActionTypes.UPDATE_USER,
+      data: { ...data, id },
+    });
+  });
+};
