@@ -3,25 +3,21 @@ import { User } from "../../../models/user.js";
 import { handleErrorResponse } from "../../../helpers/handle-error-response.js";
 import { handleResponse } from "../../../helpers/handle-response.js";
 import { IncomingMessage, ServerResponse } from "http";
-import process from "node:process";
-import { WorkerActionTypes } from "../../../models/worker-action-types.js";
+import { UsersRepository } from "../../../users-repository";
 
 export const createUserHandler = async (
   req: IncomingMessage,
   res: ServerResponse,
+  usersRepository: UsersRepository,
 ) => {
-  return new Promise(async (resolve) => {
-    const data = await parseRequestBody<User>(req);
+  const body = await parseRequestBody<User>(req);
 
-    if (!data?.username || !data.age) {
-      handleErrorResponse(res, 400, "Username and age are required");
-      return;
-    }
+  if (!body?.username || !body.age) {
+    handleErrorResponse(res, 400, "Username and age are required");
+    return;
+  }
 
-    process.once("message", ({ data }) => {
-      handleResponse(res, data, 201);
-      resolve(data);
-    });
-    process.send?.({ type: WorkerActionTypes.CREATE_USER, data });
-  });
+  const { data } = await usersRepository.create(body);
+
+  handleResponse(res, data, 201);
 };

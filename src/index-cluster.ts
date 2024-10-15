@@ -17,7 +17,7 @@ if (cluster.isPrimary) {
   console.log(`Primary ${process.pid} is running`);
 
   const numCPUs = os.availableParallelism();
-  const usersRepository = new UsersRepository();
+  const usersRepository = UsersRepository.getInstance();
   const workers: Worker[] = [];
   let currentWorker = 0;
 
@@ -49,47 +49,54 @@ if (cluster.isPrimary) {
       );
 
       const worker = workers[currentWorker];
-      worker.once("message", ({ type, data }) => {
-        console.log('Primary process received message:', type, data);
+      worker.once("message", async ({ type, data: reqData }) => {
         switch (type) {
           case WorkerActionTypes.CREATE_USER: {
+            const { data } = await usersRepository.create(reqData as User);
             worker.send?.({
               type: "USER_ADDED",
-              data: usersRepository.create(data as User),
+              data,
             });
             break;
           }
           case WorkerActionTypes.UPDATE_USER: {
-            const hasUser = usersRepository.hasUser(data.id);
+            const { data, error } = await usersRepository.update(
+              reqData as User,
+            );
             worker.send?.({
               type: "USER_UPDATED",
-              data: hasUser && usersRepository.update(data as User),
-              error: !hasUser,
+              data,
+              error,
             });
             break;
           }
           case WorkerActionTypes.DELETE_USER: {
-            const hasUser = usersRepository.hasUser(data);
+            const { data, error } = await usersRepository.delete(
+              reqData as string,
+            );
             worker.send?.({
               type: "USER_DELETED",
-              data: hasUser && usersRepository.delete(data as string),
-              error: !hasUser,
+              data,
+              error,
             });
             break;
           }
           case WorkerActionTypes.GET_USER: {
-            const hasUser = usersRepository.hasUser(data as string);
+            const { data, error } = await usersRepository.getOneById(
+              reqData as string,
+            );
             worker.send?.({
               type: "USER_RETRIEVED",
-              data: hasUser && usersRepository.getOneById(data as string),
-              error: !hasUser,
+              data,
+              error,
             });
             break;
           }
           case WorkerActionTypes.GET_USERS: {
+            const { data } = await usersRepository.getAll();
             worker.send?.({
               type: "USERS_RETRIEVED",
-              data: usersRepository.getAll(),
+              data,
             });
             break;
           }

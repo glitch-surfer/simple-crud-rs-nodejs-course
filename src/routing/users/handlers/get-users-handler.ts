@@ -1,14 +1,11 @@
 import { handleResponse } from "../../../helpers/handle-response.js";
 import { ServerResponse } from "http";
-import process from "node:process";
-import { WorkerActionTypes } from "../../../models/worker-action-types.js";
+import { UsersRepository } from "../../../users-repository.js";
 
-export const getUsersHandler = (res: ServerResponse) => {
-  return new Promise((resolve) => {
-    process.once("message", ({ data }) => {
-      handleResponse(res, data);
-      resolve(data);
-    });
-    process.send?.({ type: WorkerActionTypes.GET_USERS });
-  });
+export const getUsersHandler = async (
+  res: ServerResponse,
+  usersRepository: UsersRepository,
+) => {
+  const {data} = await usersRepository.getAll();
+  handleResponse(res, data);
 };

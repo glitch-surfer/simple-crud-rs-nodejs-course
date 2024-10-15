@@ -3,32 +3,25 @@ import { parseRequestBody } from "../../../helpers/parse-request-body.js";
 import { User } from "../../../models/user.js";
 import { handleResponse } from "../../../helpers/handle-response.js";
 import { IncomingMessage, ServerResponse } from "http";
-import process from "node:process";
-import { WorkerActionTypes } from "../../../models/worker-action-types.js";
 import { getUserId } from "../../../helpers/get-user-id.js";
+import { UsersRepository } from "../../../users-repository.js";
 
 export const updateUserHandler = async (
   req: IncomingMessage,
   res: ServerResponse,
+  usersRepository: UsersRepository,
 ) => {
-  return new Promise(async (resolve) => {
-    const data = await parseRequestBody<User>(req);
+  const body = await parseRequestBody<User>(req);
 
-    if (!data?.username || !data.age) {
-      handleErrorResponse(res, 400, "Username and age are required");
-      return;
-    }
+  if (!body?.username || !body.age) {
+    handleErrorResponse(res, 400, "Username and age are required");
+    return;
+  }
+  const id = getUserId(req);
+  if (!id) return handleErrorResponse(res, 400, "User id is required");
 
-    process.once("message", ({ data, error }) => {
-      if (error) return handleErrorResponse(res, 404, "User not found");
-      handleResponse(res, data);
-      resolve(data);
-    });
+  const { error, data } = await usersRepository.update({ ...body, id });
+  if (error) return handleErrorResponse(res, 404, "User not found");
 
-    const id = getUserId(req);
-    process.send?.({
-      type: WorkerActionTypes.UPDATE_USER,
-      data: { ...data, id },
-    });
-  });
+  handleResponse(res, data);
 };
